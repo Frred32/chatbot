@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Interface</title>
+  <style>
+    /* General Styling */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+    }
+
+    /* Left Section (Message Log) */
+    .left-section {
+      flex: 2;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .left-section h1 {
+      font-size: 16px;
+      margin: 0;
+      font-weight: normal;
+    }
+
+    .left-section input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #1e1e1e;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .left-section textarea {
+      flex: 1;
+      width: 100%;
+      resize: none;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #1e1e1e;
+      color: #fff;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    /* Bottom Input Section */
+    .bottom-input {
+      display: flex;
+      align-items: center; /* Align vertically in the center */
+      padding: 10px;
+      border-top: 1px solid #333;
+      background-color: #2e2e2e;
+    }
+
+    .bottom-input input[type="text"] {
+      flex-grow: 1; /* Make the input take up available space */
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #1e1e1e;
+      color: #fff;
+      font-size: 14px;
+      height: 40px; /* Fixed height */
+    }
+
+    .bottom-input button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      background-color: #0078d7;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      height: 40px; /* Set same height as the input */
+      margin-left: 10px; /* Space between the input and button */
+    }
+
+    .bottom-input button:hover {
+      background-color: #005bb5;
+    }
+
+    /* Right Section (Parameters) */
+    .right-section {
+      flex: 1;
+      border-left: 1px solid #333;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .right-section h1 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      font-weight: normal;
+    }
+
+    .parameter {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .parameter label {
+      font-size: 14px;
+    }
+
+    .parameter input[type="range"] {
+      width: 100%;
+    }
+
+    .parameter input[type="text"] {
+      width: 60px;
+      padding: 5px;
+      text-align: center;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #1e1e1e;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    /* Error Popup Styling */
+    .error-popup {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 20px;
+      background-color: #ff4d4d;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .error-popup button {
+      background-color: #fff;
+      color: #ff4d4d;
+      border: none;
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 10px;
+      border-radius: 4px;
+    }
+
+    .error-popup button:hover {
+      background-color: #ffe6e6;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Left Section -->
+    <div class="left-section">
+      <h1>SYSTEM</h1>
+      <input type="text" id="systemMessage" placeholder="Enter system message">
+      <textarea id="messageLog" readonly></textarea>
+      <div class="bottom-input">
+        <input type="text" id="userMessage" placeholder="User Message...">
+        <button id="submitButton">Submit</button>
+      </div>
+    </div>
+
+    <!-- Right Section -->
+    <div class="right-section">
+      <h1>PARAMETERS</h1>
+      <!-- Temperature -->
+      <div class="parameter">
+        <label for="temperatureSlider">Temperature</label>
+        <input type="range" id="temperatureSlider" min="0" max="2" step="0.1" value="1">
+        <input type="text" id="temperatureValue" value="1" readonly>
+      </div>
+
+      <!-- Max Tokens -->
+      <div class="parameter">
+        <label for="maxTokensSlider">Max Tokens</label>
+        <input type="range" id="maxTokensSlider" min="0" max="32768" step="1" value="1024">
+        <input type="text" id="maxTokensValue" value="1024" readonly>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Error Popup -->
+  <div class="error-popup" id="errorPopup">
+    <p id="errorMessage">An error occurred. Please try again.</p>
+    <button onclick="closeErrorPopup()">Close</button>
+  </div>
+
+  <script>
+    // Get references to elements
+    const temperatureSlider = document.getElementById('temperatureSlider');
+    const temperatureValue = document.getElementById('temperatureValue');
+    const maxTokensSlider = document.getElementById('maxTokensSlider');
+    const maxTokensValue = document.getElementById('maxTokensValue');
+    const submitButton = document.getElementById('submitButton');
+    const userMessage = document.getElementById('userMessage');
+    const systemMessage = document.getElementById('systemMessage');
+    const messageLog = document.getElementById('messageLog');
+    const errorPopup = document.getElementById('errorPopup');
+    const errorMessage = document.getElementById('errorMessage');
+
+    // Update temperature value dynamically
+    temperatureSlider.addEventListener('input', () => {
+      temperatureValue.value = temperatureSlider.value;
+    });
+
+    // Update max tokens value dynamically
+    maxTokensSlider.addEventListener('input', () => {
+      maxTokensValue.value = maxTokensSlider.value;
+    });
+
+    // Handle submit button click
+    submitButton.addEventListener('click', async () => {
+      const systemMsg = systemMessage.value.trim();
+      const userMsg = userMessage.value.trim();
+
+      if (userMsg) {
+        // Append messages to the log
+        messageLog.value += `SYSTEM: ${systemMsg}\nUSER: ${userMsg}\n\n`;
+        // Clear input field
+        userMessage.value = '';
+
+        // Groq API URL
+        const url = 'https://api.groq.com/openai/v1/chat/completions';
+
+        // Set your API key securely (replace with your actual API key)
+        const apiKey = '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';
+
+        // Prepare payload data
+        const payload = {
+          messages: [
+            { role: 'system', content: systemMsg },
+            { role: 'user', content: userMsg }
+          ],
+          model: 'llama-3.1-8b-instant',
+          temperature: parseFloat(temperatureValue.value),
+          max_tokens: parseInt(maxTokensValue.value)
+        };
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const botMessage = data.choices[0].message.content;
+            messageLog.value += `BOT: ${botMessage}\n\n`;
+          } else {
+            showErrorPopup(`Error: ${response.statusText}`);
+          }
+        } catch (error) {
+          showErrorPopup(`Network Error: ${error.message}`);
+        }
+      }
+    });
+
+    // Show error popup with message
+    function showErrorPopup(message) {
+      errorMessage.textContent = message;
+      errorPopup.style.display = 'block';
+    }
+
+    // Close the error popup
+    function closeErrorPopup() {
+      errorPopup.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
